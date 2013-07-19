@@ -8,8 +8,8 @@ Servo pSR;         // Servo Direito  - Motorista
 Servo pSL;         // Servo Esquerdo - Passageiro
 Servo neck;        // Servo do sensor de distancia
 
-int pSRS = 92;     // Servo Direiro  Ponto de parada  
-int pSLS = 67;     // Servo Esquerdo Ponto de parada
+int pSRS = 93;     // Servo Direiro  Ponto de parada  
+int pSLS = 66;     // Servo Esquerdo Ponto de parada
 
 const int PinPestanaDireita = 2;     // the number of the pushbutton pin
 const int PinPestanaEsquerda = 5;     // the number of the pushbutton pin
@@ -26,7 +26,6 @@ void inicializaServos(){
   anda(0,0,0);     // para os motores
 }
 
-
 void anda(int velocidade, int flagRe, int valueDirection){
   int adjR=0;
   int adjL=0;
@@ -40,7 +39,11 @@ void anda(int velocidade, int flagRe, int valueDirection){
     velocidade=-velocidade;
     
   pSR.write(pSRS-velocidade+adjR);
+  Serial.print(" M.Dir: ");
+  Serial.print(pSRS-velocidade+adjR);
   pSL.write(pSLS+velocidade+adjL);
+  Serial.print(" M.Esq: ");
+  Serial.println(pSLS+velocidade+adjL);
 }
 
 
@@ -78,20 +81,34 @@ void lnGetData(){
 
 void getLineRead(){
   lnGetData();
+  showLineRead();
 }  
 
 void showLineRead(){
   for (int s=0; s<4; s++){
-    //Serial.print(lineRead[s]);
-    //Serial.print(" :[ ");
-    //Serial.print(lineRead[s+4]);
-    //Serial.print("-");
-    //Serial.print(lineRead[s+8]);
-    //Serial.print(" ]  (");
-    //Serial.print(lineRead[s+12]);
-    //Serial.print(") ");
+//    Serial.print(lineRead[s]);
+//    Serial.print(" :[ ");
+//    Serial.print(lineRead[s+4]);
+//    Serial.print("-");
+//    Serial.print(lineRead[s+8]);
+    Serial.print("  [");
+    Serial.print(lineRead[s+12]);
+    Serial.print("] - ");
   }
-  //Serial.println(""); 
+  Serial.print(getDirection());
+  Serial.print(""); 
+
+//  for (int s=0; s<4; s++){
+//    Serial.print(lineRead[s]);
+//    Serial.print(" :[ ");
+//    Serial.print(lineRead[s+4]);
+//    Serial.print("-");
+//    Serial.print(lineRead[s+8]);
+//    Serial.print(" ]  (");
+//    Serial.print(lineRead[s+12]);
+//    Serial.print(") ");
+//  }
+//  Serial.println(""); 
 }  
 
 void colisao(int l, int r){
@@ -117,44 +134,32 @@ void leiaPestanas(){
 void readDistance(){
     int initialPos = 100;
     int distance = getPing();
-    
-
     neck.write(initialPos);
-    
     if(distance < 600){
       anda(0,0,0);
       Serial.println(distance);
-      delay(500);
+      delay(400);
       changeDirection(distance);
     }
 }
 
 
 void changeDirection(int initial){
-  //delay(300);
-  //showDistance(getPing());
-  //delay(300);
   int left, right;
-  neck.write(70);
+  neck.write(50);
   delay(300);
   left = getPing();
-  neck.write(130);
+  neck.write(150);
   delay(300);
   right = getPing();
   neck.write(100);
-  delay(300);
-  Serial.println(left);
-  Serial.println(right);
-
-  delay(300);
+  delay(400);
   if(left > right) {
-    Serial.println("Esquerda");
-    anda(4,0,-2);
+    gira(1);
   }else{
-    Serial.println("Direita");
-    anda(4,0,2);
+    gira(0);
   }  
-  delay(1500);
+  delay(200);
   
 }
 
@@ -190,6 +195,7 @@ void playNote(char note, int duration) {
   }
 }
 
+// 
 int getDirection(){
   int d=0;
   if (lineRead[12]==1)
@@ -198,9 +204,24 @@ int getDirection(){
     d+=1;
   if (lineRead[14]==1)
     d-=1;
-  if (lineRead[14]==1)
+  if (lineRead[15]==1)
     d-=3;
   return d;  
+}
+
+void gira(int direita)
+{
+  int vel=3;
+  if (direita){
+    pSR.write(pSRS+vel);
+    pSL.write(pSLS+vel);
+  }
+  else
+  {
+    pSR.write(pSRS-vel);
+    pSL.write(pSLS-vel);
+  }
+  delay(700);
 }
 
 // Programa principal
@@ -212,17 +233,16 @@ void setup()
   pinMode(PinPestanaDireita, INPUT);     
   pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
-
   inicializaServos();
 } 
 
 void loop() 
 {
-  lnGetData();
+  getLineRead();
   anda(4,0,getDirection());
-  leiaPestanas();
-  readDistance();
-  delay(80);
+  leiaPestanas();  
+  readDistance();  
+  delay(40);
 }
 
 
